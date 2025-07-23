@@ -235,6 +235,7 @@ void Worker_ForGPIO::action_BatteryOff()
 
 void Worker_ForGPIO::action_RebootDevice()
 {
+    logworker.addLogger("exec action_RebootDevice", LOGTYPE_PRINT);
     beReboot = true;
 }
 

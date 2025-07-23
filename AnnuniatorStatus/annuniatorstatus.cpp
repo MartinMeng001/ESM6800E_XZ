@@ -4,7 +4,7 @@
 #include "Configfile/userinfofile.h"
 #include "Driver/yiyuan_ec20_4gadapter.h"
 #include "Platform808/datamgr_to808platform.h"
-//#include "Platform4G/platformtcp.h"
+#include "Platform4G/platformtcp.h"
 #include "Platform4G/platformtcpv2.h"
 #include "Annuniator/datamgr_fromannuniator.h"
 #include "Protocol/protocolannuniator4u.h"
@@ -52,19 +52,19 @@ void AnnuniatorStatus::tick()
         //logworker.addLogger("PPPID REBOOT enter", LOGTYPE_PRINT_RECORD);
         if(gUserInfoFile.getRebooting4G()>0){
             beRebooting = true;
-            Action_4GPowerReset();
+            //Action_RebootDevice();
             logworker.addLogger("PPPID REBOOT", LOGTYPE_PRINT_RECORD);
         }
     }else if(status4GNetwork.Allow2RebootinngFromPlatform4G()){
         if(gUserInfoFile.getRebootingPlatform()>0){
             beRebooting = true;
-            Action_4GPowerReset();
+            Action_RebootDevice();
             logworker.addLogger("4GPLATFORM REBOOT", LOGTYPE_PRINT_RECORD);
         }
     }else if(status4GNetwork.Allow2RebootingFrom8084G()){
         if(gUserInfoFile.getRebooting808()>0){
             beRebooting = true;
-            Action_4GPowerReset();
+            Action_RebootDevice();
             logworker.addLogger("808 PLATFORM REBOOT", LOGTYPE_PRINT_RECORD);
         }
     }
@@ -116,7 +116,7 @@ void AnnuniatorStatus::Action_4GReseted()
 
 void AnnuniatorStatus::Action_RebootDevice()
 {
-    //controllerGPIO.actionRebootDev();
+    controllerGPIO.actionRebootDev();
 }
 
 void AnnuniatorStatus::Action_808Heartbeat()
@@ -267,9 +267,9 @@ void AnnuniatorStatus::Delay_MSec(int msec)
 
 void AnnuniatorStatus::config()
 {
-    connect(this, &AnnuniatorStatus::sigGetAnnuniatorTime, &gPlatformTcpv2, &PlatformTcpV2::processExtraData4Annuniator);
-    connect(this, &AnnuniatorStatus::sigGetAnnuniatorTrouble, &gPlatformTcpv2, &PlatformTcpV2::processExtraData4Annuniator);
-    connect(&(this->AnnunitorTimeMgr), &AnnuniatorTime::updateAnnuniatorTime, &gPlatformTcpv2, &PlatformTcpV2::processExtraData4Annuniator);
+    connect(this, &AnnuniatorStatus::sigGetAnnuniatorTime, &gPlatformTcpv2, &PlatformTcp::processExtraData4Annuniator);
+    connect(this, &AnnuniatorStatus::sigGetAnnuniatorTrouble, &gPlatformTcpv2, &PlatformTcp::processExtraData4Annuniator);
+    connect(&(this->AnnunitorTimeMgr), &AnnuniatorTime::updateAnnuniatorTime, &gPlatformTcpv2, &PlatformTcp::processExtraData4Annuniator);
 }
 
 TroubleStatus::TroubleStatus()

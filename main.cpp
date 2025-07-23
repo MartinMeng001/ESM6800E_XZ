@@ -9,7 +9,7 @@
 #include "Driver/yiyuan_ec20_4gadapter.h"
 #include "Annuniator/tcpserver4annuniator.h"
 #include "AnnuniatorStatus/annuniatorstatus.h"
-//#include "Platform4G/platformtcp.h"
+#include "Platform4G/platformtcp.h"
 #include "Platform4G/platformtcpv2.h"
 #include "Platform808/platform808tcpv2.h"
 #include "PlatformAsClient/tcpserver4platform.h"
@@ -50,6 +50,7 @@
 // Version 3.1 - remove 4G manage, used the emtronix 4G driver do 4G connection, don't process the route too
 // Version 3.2 - New TcpClient version
 // Version 3.2.08 - a trouble alarm will repeat 3 times
+// Version 3.3.03 - No data from server over 3 minutes, reconnected to server4G
 void handle_pipe(int sig){
     // do nothing
 }
@@ -69,14 +70,15 @@ int main(int argc, char *argv[])
     //
     logworker.start();
     //logworker.addLogger("SB4U_Advance_Esm6800E_v2.8.16r", LOGTYPE_PRINT_RECORD);
-    logworker.addLogger("SB4U_Advance_Esm6800E_v3.2.09b - 4G driver", LOGTYPE_PRINT_RECORD);
+    logworker.addLogger("SB4U_Advance_Esm6800E_v3.3.03_20240315_02 - 4G driver", LOGTYPE_PRINT_RECORD);
     //gUserInfoFile.testReadFunction();
     gUserInfoFile.initUserInfoData();
     //gUserInfoFile.testWritefunction();
 
     // initial protocol & Status params
     logworker.setDisableLogCommon(gUserInfoFile.getDisableLogCommon());
-    gProtocolFor4GServer.initProtocol4G(gUserInfoFile.getLocalIP());
+    //gProtocolFor4GServer.initProtocol4G(gUserInfoFile.getLocalIP());
+    gProtocolFor4GServer.initProtocol4G("192.168.2.253");
     gProtocolAnnuniator4U.initProtocol4U();
     gProtocol808Platform.initSetPhoneNum(gUserInfoFile.get808PhoneId());
     gAnnuniatorStatus.initAnnuniatorStatusParams();
@@ -89,7 +91,9 @@ int main(int argc, char *argv[])
 //    gYiYuanEC20_4GAdapter.Connect4G();
 
     // Connected to Platform
-    gPlatformTcpv2.start(gUserInfoFile.get4GServerIP(), gUserInfoFile.get4GServerPort(), gUserInfoFile.getAnnuniatorIP());
+    //gPlatformTcpv2.start(gUserInfoFile.get4GServerIP(), gUserInfoFile.get4GServerPort(), gUserInfoFile.getAnnuniatorIP());
+    gPlatformTcpv2.start("192.168.2.137", 8125);
+    //gPlatformTcpv2.start(gUserInfoFile.get4GServerIP(), gUserInfoFile.get4GServerPort());
     gPlatform808Tcpv2.start(gUserInfoFile.get808ServerIP(), gUserInfoFile.get808ServerPort());
     gtcpServer4Platfrom.start(gUserInfoFile.getLocalPort());
 

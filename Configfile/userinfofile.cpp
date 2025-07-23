@@ -389,7 +389,7 @@ void UserInfoFile::resetConfigData()
     configData.valid = 1;
     configData.roadname = QString::fromUtf8(QByteArray("未知路口"));
     configData.ntpServer = "120.25.115.20";
-    configData.serverIP = "117.158.154.17";
+    configData.serverIP = "117.158.154.17";//
     configData.localPort = 5800;
     configData.annuniatorPort = 5801;
     configData.annuniatorIP = "192.168.0.99";

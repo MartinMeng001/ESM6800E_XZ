@@ -2,56 +2,114 @@
 #define PLATFORMTCP_H
 
 #include <QObject>
-#include <QAbstractSocket>
 #include <QTcpSocket>
+#include <QTimer>
 #include <QDateTime>
-#include <atomic>
+#include <QTime>
 
 class PlatformTcp : public QObject
 {
     Q_OBJECT
+
 public:
     explicit PlatformTcp(QObject *parent = nullptr);
+    ~PlatformTcp();
 
-    int start(QString ip, int port);
-    int close();
-    int SendData(QByteArray& data4sending);
-    int SendData2(QByteArray& data4sending);
-
+    // 公共接口
+    int start(const QString &ip, int port);
+    int stop();
+    int connectServer();
+    int disconnectServer();
+    int reconnectServer();
+    int SendData(QByteArray &data4sending);
+    int checkClientStatus();
     int getStatus() const;
+
+    // 配置方法
+    void setMaxReconnectAttempts(int attempts);
+    void setHeartbeatInterval(int interval);
+    void setConnectionTimeout(int timeout);
+
+    // 状态查询
+    bool isConnected() const;
+    bool isReconnecting() const;
+    int getCurrentReconnectCount() const;
+
 signals:
     void clientStatusChanged(int status);
-    void sig4GNetworkDataChanging(int type, int datasize);
+    void sig4GNetworkDataChanging(int type, int size);
+    void connectionEstablished();
+    void connectionLost();
+    void reconnectAttemptFailed(int attempt);
+    void maxReconnectAttemptsReached();
+
 public slots:
+    void checkNetworkStatus();
     void processNewConnection();
-    void processDisconnected();
-    void processError(QAbstractSocket::SocketError socketError);
+    void processExtraData4Annuniator(QByteArray data);
     void processReadyRead();
     void processReadyWrite(QByteArray data);
-    void processExtraData4Annuniator(QByteArray data);
-    void checkNetworkStatus();
+
+private slots:
+    void onConnected();
+    void onDisconnected();
+    void onSocketError(QAbstractSocket::SocketError error);
+
+    void attemptReconnect();
+    void sendHeartbeat();
+    void checkConnectionHealth();
 
 protected:
-    int checkClientStatus();
-    int disconnectServer();
-    int connectServer();
-    int reconnectServer();
+    // 内部方法
+    void setupSocketConnections();
+    void startReconnectProcess();
+    void stopReconnectProcess();
+    void resetConnectionState();
+    void updateConnectionStatus();
+
+    // 协议相关
+    bool parse_basicInfo(QByteArray &data);
+    void findItemPackets(QByteArray &data);
+    bool generateHeartbeatPacket(QByteArray &heartbeat);
+
+    // 配置相关
     int clientConfig();
-    bool parse_basicInfo(QByteArray& data);
-    void findItemPackets(QByteArray& data);
-    void Delay_MSec(int msec);
+
 private:
-    bool beValidConnection;
-    bool beStopNew;
-    bool inReconnecting;
-    int status;
+    // 网络相关
+    QTcpSocket client;
     QString serverIp;
     int serverPort;
-    QTcpSocket client;
-    std::atomic<int> reConnectCount;
+
+    // 状态管理
+    bool beValidConnection;
+    bool inReconnecting;
+    int status;
+    int reConnectCount;
+    int currentReconnectCount;
+    int maxReconnectAttempts;
+
+    // 定时器
+    QTimer *reconnectTimer;
+    QTimer *heartbeatTimer;
+    QTimer *healthCheckTimer;
+
+    // 心跳和健康检查
     QByteArray heartbeat;
     QDateTime lastsendTime;
+    QDateTime lastDataTime;
+    int heartbeatInterval;
+    int connectionTimeout;
+
+    // 常量定义
+    static const int DEFAULT_RECONNECT_DELAY = 5000;        // 5秒重连延迟
+    static const int DEFAULT_HEARTBEAT_INTERVAL = 30000;    // 30秒心跳间隔
+    static const int DEFAULT_CONNECTION_TIMEOUT = 60000;    // 60秒连接超时
+    static const int DEFAULT_MAX_RECONNECT_ATTEMPTS = 5;    // 默认最大重连次数
+    static const int NETWORK_CHECK_INTERVAL = 10000;       // 10秒网络检查间隔
 };
-extern PlatformTcp gPlatformTcp;
+
+// 全局实例声明
+extern PlatformTcp gPlatformTcpv2;
 
 #endif // PLATFORMTCP_H

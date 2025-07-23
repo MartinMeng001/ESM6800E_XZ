@@ -4,11 +4,12 @@
 #include "datamgr_fromplatform.h"
 #include "platformtcpv2.h"
 
-PlatformTcpV2 gPlatformTcpv2;
+PlatformTcpV2 gPlatformTcp;
 PlatformTcpV2::PlatformTcpV2(QObject *parent)
     : QObject{parent}
 {
     reconnectTimer = new QTimer(this);
+    heartbeatTime = QTime::currentTime();
     reconnectTimer->setSingleShot(true);
 }
 
@@ -48,9 +49,19 @@ int PlatformTcpV2::SendData(QByteArray &data4sending)
     return size;
 }
 
+bool PlatformTcpV2::checkConnectValid()
+{
+    if(heartbeatTime.secsTo(QTime::currentTime())>180){ // 如果3分钟没有收到心跳，重启连接
+        heartbeatTime=QTime::currentTime();
+        return true;
+    }
+    return false;
+}
+
 void PlatformTcpV2::connectToServer()
 {
-    qDebug() << "Connecting to Server...";
+    QString info = QString("Connecting to 4G Server, %1:%2").arg(ip).arg(port);
+    qDebug() << info;
     socket->connectToHost(ip, port);
 }
 
@@ -80,6 +91,7 @@ void PlatformTcpV2::onError(QAbstractSocket::SocketError socketError)
 
 void PlatformTcpV2::onReconnect()
 {
+    if(checkConnectValid()==false) return;
     qDebug() << "Unknown Socket error:lost connection";
     // 出错后启动重连定时器
     if(reconnectTimer->isActive()) return;
@@ -89,6 +101,7 @@ void PlatformTcpV2::onReconnect()
 void PlatformTcpV2::reconnect()
 {
     qDebug() << "Reconnecting...";
+    heartbeatTime=QTime::currentTime();
     // 关闭当前连接
     socket->abort();
     // 连接到服务器
@@ -102,13 +115,14 @@ void PlatformTcpV2::processReadyWrite(QByteArray data)
 
 void PlatformTcpV2::processReadyRead()
 {
+    qDebug() << "rec data from 4G..";
     QByteArray data=socket->readAll();
     if(data.size()==0) return;
     findItemPackets(data);
     //原始处理方式
     QString recdata = data.toHex().toUpper();
     QString recData = QString("Platform Receive:%1").arg(recdata);
-    //logworker.addLogger(recData, LOGTYPE_PRINT);
+    logworker.addLogger(recData, LOGTYPE_PRINT);
 }
 
 void PlatformTcpV2::processExtraData4Annuniator(QByteArray data)
@@ -133,6 +147,7 @@ bool PlatformTcpV2::parse_basicInfo(QByteArray &data)
 
 void PlatformTcpV2::findItemPackets(QByteArray &data)
 {
+    heartbeatTime = QTime::currentTime();
     if(parse_basicInfo(data)){
         //if(beValidConnection == false) beValidConnection = true;
     }else{

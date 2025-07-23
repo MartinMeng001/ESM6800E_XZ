@@ -1,7 +1,7 @@
 #include <sys/prctl.h>
 #include "Configfile/userinfofile.h"
 #include "Annuniator/datamgr_fromannuniator.h"
-//#include "Platform4G/platformtcp.h"
+#include "Platform4G/platformtcp.h"
 #include "Protocol/protocolfor4gserver.h"
 #include "Platform4G/platformtcpv2.h"
 #include "PlatformAsClient/manageplatformconnections.h"
@@ -18,11 +18,11 @@ void Worker_fromAnnuniator::work4Annuniator()
 {
     //QString externalip = gUserInfoFile.get4GServerIP();
     prctl(PR_SET_NAME,"Worker_fromAnnuniator");
-    connect(this, &Worker_fromAnnuniator::sendData2Platform, &gPlatformTcpv2, &PlatformTcpV2::processReadyWrite);
-    connect(this, &Worker_fromAnnuniator::reconnect2Platform, &gPlatformTcpv2, &PlatformTcpV2::onReconnect);
+    connect(this, &Worker_fromAnnuniator::sendData2Platform, &gPlatformTcpv2, &PlatformTcp::processReadyWrite);
+    //connect(this, &Worker_fromAnnuniator::reconnect2Platform, &gPlatformTcpv2, &PlatformTcp::onReconnect);
     connect(this, &Worker_fromAnnuniator::sendData2Platform, &manager_PlatformClientConnections, &ManagePlatformConnections::sendData2AllClients);
     //connect(this, &Worker_fromAnnuniator::checkNetworkStatus, &gPlatformTcp, &PlatformTcp::checkNetworkStatus);
-    int countTimeout = 90000;
+    int countTimeout = 1000;
     while (true) {
         dataItem_Annuniator* item = dataMgrFromAnnuniator.getLatestDataItem();
         if(item!=nullptr){
@@ -30,13 +30,12 @@ void Worker_fromAnnuniator::work4Annuniator()
             emit sendData2Platform(item->dataFromAnnuniator);
             logworker.addLogger("work4Annuniator delete dataItem_Annuniator", LOGTYPE_PRINT_RECORD);
             delete item;
-            countTimeout=90000;
+            //countTimeout=90000;
         }
         QThread::msleep(1);
         if(countTimeout>0)countTimeout--;
         if(countTimeout==0){
-            countTimeout=90000;
-            //emit sendData2Platform(gProtocolFor4GServer.makeHearbeat());
+            countTimeout=1000;
             emit reconnect2Platform();
         }
 //        QEventLoop loop;

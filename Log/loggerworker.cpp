@@ -56,9 +56,9 @@ void LoggerWorker::run()
                     printOneLogger(item);
                 }
                 if(item->type == LOGTYPE_RECORD || item->type == LOGTYPE_PRINT_RECORD){
-                    recordOneLogger(item);
+                    //recordOneLogger(item);
                     //msleep(500);
-                    //printOneLogger(item);
+                    printOneLogger(item);
                     std::cout << "LoggerWorker recorded" << allPendingLoggers.size() << std::endl;
                 }
                 delete item;

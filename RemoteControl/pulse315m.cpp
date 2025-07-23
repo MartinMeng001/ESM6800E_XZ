@@ -4,7 +4,7 @@
 #include <QMutexLocker>
 #include "Configfile/userinfofile.h"
 #include "Protocol/protocolannuniator4u.h"
-//#include "Platform4G/platformtcp.h"
+#include "Platform4G/platformtcp.h"
 #include "Platform4G/platformtcpv2.h"
 #include "Log/loggerworker.h"
 #include "regionmanager.h"
@@ -294,11 +294,11 @@ void Pulse315M::checkPulseItemList()
 void Pulse315M::config()
 {
     if(recordOnly==false){
-        connect(this, &Pulse315M::signalGuardEWGo, &gPlatformTcpv2, &PlatformTcpV2::processExtraData4Annuniator);
-        connect(this, &Pulse315M::signalGuardEWLeft, &gPlatformTcpv2, &PlatformTcpV2::processExtraData4Annuniator);
-        connect(this, &Pulse315M::signalGuardSNGo, &gPlatformTcpv2, &PlatformTcpV2::processExtraData4Annuniator);
-        connect(this, &Pulse315M::signalGuardSNLeft, &gPlatformTcpv2, &PlatformTcpV2::processExtraData4Annuniator);
-        connect(this, &Pulse315M::signalGuardClear, &gPlatformTcpv2, &PlatformTcpV2::processExtraData4Annuniator);
+        connect(this, &Pulse315M::signalGuardEWGo, &gPlatformTcpv2, &PlatformTcp::processExtraData4Annuniator);
+        connect(this, &Pulse315M::signalGuardEWLeft, &gPlatformTcpv2, &PlatformTcp::processExtraData4Annuniator);
+        connect(this, &Pulse315M::signalGuardSNGo, &gPlatformTcpv2, &PlatformTcp::processExtraData4Annuniator);
+        connect(this, &Pulse315M::signalGuardSNLeft, &gPlatformTcpv2, &PlatformTcp::processExtraData4Annuniator);
+        connect(this, &Pulse315M::signalGuardClear, &gPlatformTcpv2, &PlatformTcp::processExtraData4Annuniator);
         connect(this, &Pulse315M::signalGuard2Platform, &gAnnuniatorStatus, &AnnuniatorStatus::Status_GuardStatus);
     }
 }

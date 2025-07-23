@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QTcpSocket>
 #include <QTimer>
+#include <QTime>
 
 class PlatformTcpV2 : public QObject
 {
@@ -13,6 +14,7 @@ public:
 
     int start(QString ip, int port, QString annuip);
     int SendData(QByteArray& data4sending);
+    bool checkConnectValid();
 signals:
 
 public slots:
@@ -33,10 +35,11 @@ protected:
 private:
     QTcpSocket *socket;
     QTimer *reconnectTimer;
+    QTime heartbeatTime;
     QString ip="127.0.0.1";
     QString annuniatorip = "192.168.0.99";
     int port = 8125;
     QByteArray heartbeat;
 };
-extern PlatformTcpV2 gPlatformTcpv2;
+extern PlatformTcpV2 gPlatformTcp;
 #endif // PLATFORMTCPV2_H
