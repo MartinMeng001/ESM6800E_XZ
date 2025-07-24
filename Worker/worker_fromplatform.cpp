@@ -16,7 +16,7 @@ Worker_FromPlatform::Worker_FromPlatform(QObject *parent) : QObject(parent)
 void Worker_FromPlatform::initWorker()
 {
     prctl(PR_SET_NAME,"Worker_FromPlatform");
-    connect(this, &Worker_FromPlatform::sendData2Annuniator, &manager_AnnuniatorConnections, &ManageAnnuniatorConnections::sendData2Annuniator);
+    connect(this, &Worker_FromPlatform::sendData2Annuniator, manager_AnnuniatorConnections, &ManageAnnuniatorConnections::sendData2Annuniator);
     while (true) {
         dataItem_Platform* item = dataMgr_FromPlatform.getLatestDataItem();
         if(item!=nullptr){

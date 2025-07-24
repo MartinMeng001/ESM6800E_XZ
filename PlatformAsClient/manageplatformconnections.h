@@ -20,6 +20,12 @@ public:
 
     int closeAllConnections();
 
+    // 新增方法
+    int getActiveConnectionCount();
+    bool checkExisted(const QString &ip);
+    bool closeConnectionByIP(const QString &ip);
+    void logConnectionStatus();
+
 signals:
 
 public slots:
@@ -30,7 +36,7 @@ public slots:
     void sendData2AllClients(QByteArray data);
 protected:
     void checkValid();
-    bool checkExisted(QString ip);
+    //bool checkExisted(QString ip);
 private:
     QMap<QString, ItemPlatformConnection*> socketmap;
 };

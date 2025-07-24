@@ -49,7 +49,7 @@ public:
     explicit ItemPlatformConnection(QObject *parent = nullptr);
     ~ItemPlatformConnection();
 
-    void initItem(QTcpSocket* socket_new);
+    bool initItem(QTcpSocket* socket_new);
     QTcpSocket *getTcpSocket(){return psocket;}
     int SendData(QByteArray& data4sending);
 

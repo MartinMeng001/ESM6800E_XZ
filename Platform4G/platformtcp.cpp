@@ -22,6 +22,8 @@ PlatformTcp::PlatformTcp(QObject *parent)
     , maxReconnectAttempts(DEFAULT_MAX_RECONNECT_ATTEMPTS)
     , heartbeatInterval(DEFAULT_HEARTBEAT_INTERVAL)
     , connectionTimeout(DEFAULT_CONNECTION_TIMEOUT)
+    , enableDeviceReboot(true)  // 新增：默认启用设备重启
+    , deviceRebootTimeout(DEFAULT_DEVICE_REBOOT_TIMEOUT)  // 新增：15分钟超时
 {
     // 初始化定时器
     reconnectTimer = new QTimer(this);
@@ -34,12 +36,19 @@ PlatformTcp::PlatformTcp(QObject *parent)
     healthCheckTimer = new QTimer(this);
     connect(healthCheckTimer, &QTimer::timeout, this, &PlatformTcp::checkConnectionHealth);
 
+    // 新增：初始化设备重启定时器
+    deviceRebootTimer = new QTimer(this);
+    deviceRebootTimer->setSingleShot(true);
+    connect(deviceRebootTimer, &QTimer::timeout, this, &PlatformTcp::triggerDeviceReboot);
     // 设置socket连接
     setupSocketConnections();
 
     // 初始化时间
     lastsendTime = QDateTime::currentDateTime();
     lastDataTime = QDateTime::currentDateTime();
+
+    // 新增：初始化连接时间
+    lastValidConnectionTime = QDateTime::currentDateTime();
 
     std::cout << "PlatformTcp: Constructor completed" << std::endl;
 }
@@ -69,6 +78,7 @@ int PlatformTcp::stop()
     reconnectTimer->stop();
     heartbeatTimer->stop();
     healthCheckTimer->stop();
+    deviceRebootTimer->stop();  // 新增：停止设备重启定时器
 
     // 标记为主动断开，防止自动重连
     inReconnecting = false;
@@ -152,10 +162,17 @@ void PlatformTcp::onConnected()
 
     // 停止重连定时器
     reconnectTimer->stop();
+    // 新增：停止设备重启定时器
+    if (enableDeviceReboot) {
+        deviceRebootTimer->stop();
+        std::cout << "PlatformTcp: Device reboot timer stopped - connection established" << std::endl;
+        logworker.addLogger("Device reboot timer stopped - connection established", LOGTYPE_RECORD);
+    }
 
     // 启动心跳和健康检查
     lastsendTime = QDateTime::currentDateTime();
     lastDataTime = QDateTime::currentDateTime();
+    lastValidConnectionTime = QDateTime::currentDateTime();  // 新增：更新有效连接时间
     heartbeatTimer->start(heartbeatInterval);
     healthCheckTimer->start(NETWORK_CHECK_INTERVAL);
 
@@ -176,6 +193,16 @@ void PlatformTcp::onDisconnected()
     heartbeatTimer->stop();
     healthCheckTimer->stop();
 
+    // 新增：启动设备重启定时器
+    if (enableDeviceReboot) {
+        deviceRebootTimer->start(deviceRebootTimeout);
+
+        QString info = QString("Device reboot timer started - will reboot in %1 minutes if no connection")
+                .arg(deviceRebootTimeout / 60000);
+        std::cout << "PlatformTcp: " << info.toStdString() << std::endl;
+        logworker.addLogger(info, LOGTYPE_RECORD);
+    }
+
     updateConnectionStatus();
     emit connectionLost();
 
@@ -186,6 +213,70 @@ void PlatformTcp::onDisconnected()
     if (!inReconnecting && currentReconnectCount < maxReconnectAttempts) {
         startReconnectProcess();
     }
+}
+
+void PlatformTcp::triggerDeviceReboot()
+{
+    qint64 disconnectedTime = lastValidConnectionTime.msecsTo(QDateTime::currentDateTime());
+
+    QString info = QString("15-minute connection timeout reached. Device has been disconnected for %1 minutes. Triggering device reboot...")
+                  .arg(disconnectedTime / 60000);
+
+    std::cout << "PlatformTcp: " << info.toStdString() << std::endl;
+    logworker.addLogger(info, LOGTYPE_RECORD);
+
+    // 记录重启原因到日志
+    logworker.addLogger("DEVICE_REBOOT_REASON: Platform connection timeout (15 minutes)", LOGTYPE_RECORD);
+
+    // 停止所有定时器和连接尝试
+    stop();
+
+    // 执行系统重启
+    std::cout << "PlatformTcp: Executing system reboot command..." << std::endl;
+    logworker.addLogger("Executing system reboot...", LOGTYPE_RECORD);
+
+    // 刷新日志缓冲区确保日志被写入
+    //QCoreApplication::processEvents();
+
+    // 执行重启命令
+    int result = system("reboot");
+    if (result != 0) {
+        std::cout << "PlatformTcp: Reboot command failed, trying alternative method" << std::endl;
+        system("sync && reboot -f");
+    }
+}
+
+void PlatformTcp::setDeviceRebootTimeout(int timeoutMinutes)
+{
+    deviceRebootTimeout = timeoutMinutes * 60000; // 转换为毫秒
+
+    QString info = QString("Device reboot timeout set to %1 minutes").arg(timeoutMinutes);
+    std::cout << "PlatformTcp: " << info.toStdString() << std::endl;
+    logworker.addLogger(info, LOGTYPE_RECORD);
+}
+
+void PlatformTcp::setDeviceRebootEnabled(bool enabled)
+{
+    enableDeviceReboot = enabled;
+
+    if (!enabled && deviceRebootTimer->isActive()) {
+        deviceRebootTimer->stop();
+        logworker.addLogger("Device reboot timer disabled and stopped", LOGTYPE_RECORD);
+    }
+
+    QString info = QString("Device reboot feature %1").arg(enabled ? "enabled" : "disabled");
+    std::cout << "PlatformTcp: " << info.toStdString() << std::endl;
+    logworker.addLogger(info, LOGTYPE_RECORD);
+}
+
+bool PlatformTcp::isDeviceRebootEnabled() const
+{
+    return enableDeviceReboot;
+}
+
+int PlatformTcp::getDeviceRebootTimeout() const
+{
+    return deviceRebootTimeout / 60000; // 返回分钟数
 }
 
 void PlatformTcp::onSocketError(QAbstractSocket::SocketError error)

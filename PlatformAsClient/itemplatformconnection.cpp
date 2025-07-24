@@ -21,7 +21,7 @@ ItemPlatformConnection::~ItemPlatformConnection()
     }
 }
 
-void ItemPlatformConnection::initItem(QTcpSocket *socket_new)
+bool ItemPlatformConnection::initItem(QTcpSocket *socket_new)
 {
     if(psocket==nullptr){
         if(socket_new!=nullptr){
@@ -36,8 +36,10 @@ void ItemPlatformConnection::initItem(QTcpSocket *socket_new)
             beValidConnection = true;
             config();
             logworker.addLogger("PlatformClient = "+annuniatorIP, LOGTYPE_PRINT_RECORD);
+            return true;
         }
     }
+    return false;
 }
 
 int ItemPlatformConnection::SendData(QByteArray &data4sending)

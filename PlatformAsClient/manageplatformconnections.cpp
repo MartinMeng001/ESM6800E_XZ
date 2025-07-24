@@ -45,6 +45,43 @@ int ManagePlatformConnections::closeAllConnections()
     }
     return 1;
 }
+int ManagePlatformConnections::getActiveConnectionCount()
+{
+    checkValid();  // 清理无效连接
+    return socketmap.size();
+}
+
+bool ManagePlatformConnections::checkExisted(const QString &ip)
+{
+    return socketmap.contains(ip);
+}
+
+bool ManagePlatformConnections::closeConnectionByIP(const QString &ip)
+{
+    if (socketmap.contains(ip)) {
+        ItemPlatformConnection* item = socketmap[ip];
+        if (item) {
+            item->closeSocket();
+            socketmap.remove(ip);
+            delete item;
+            return true;
+        }
+    }
+    return false;
+}
+
+void ManagePlatformConnections::logConnectionStatus()
+{
+    logworker.addLogger(QString("Active connections: %1").arg(socketmap.size()), LOGTYPE_PRINT);
+
+    QMap<QString, ItemPlatformConnection*>::iterator it;
+    for(it = socketmap.begin(); it != socketmap.end(); ++it) {
+        QString info = QString("Connection: IP=%1, Valid=%2")
+                      .arg(it.key())
+                      .arg(it.value()->getBeValidConnection() ? "YES" : "NO");
+        logworker.addLogger(info, LOGTYPE_PRINT);
+    }
+}
 
 void ManagePlatformConnections::refreshClients()
 {
@@ -108,9 +145,9 @@ void ManagePlatformConnections::checkValid()
     }
 }
 
-bool ManagePlatformConnections::checkExisted(QString ip)
-{
-    if(socketmap.isEmpty()) return false;
-    if(socketmap.contains(ip))return true;
-    return false;
-}
+//bool ManagePlatformConnections::checkExisted(QString ip)
+//{
+//    if(socketmap.isEmpty()) return false;
+//    if(socketmap.contains(ip))return true;
+//    return false;
+//}

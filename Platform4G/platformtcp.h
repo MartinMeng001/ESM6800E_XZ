@@ -35,6 +35,12 @@ public:
     bool isReconnecting() const;
     int getCurrentReconnectCount() const;
 
+    // 设备重启配置方法
+    void setDeviceRebootTimeout(int timeoutMinutes);
+    void setDeviceRebootEnabled(bool enabled);
+    bool isDeviceRebootEnabled() const;
+    int getDeviceRebootTimeout() const;
+
 signals:
     void clientStatusChanged(int status);
     void sig4GNetworkDataChanging(int type, int size);
@@ -58,6 +64,7 @@ private slots:
     void attemptReconnect();
     void sendHeartbeat();
     void checkConnectionHealth();
+    void triggerDeviceReboot();             // 触发设备重启
 
 protected:
     // 内部方法
@@ -100,6 +107,11 @@ private:
     QDateTime lastDataTime;
     int heartbeatInterval;
     int connectionTimeout;
+    // 15分钟重启定时器相关
+    QTimer *deviceRebootTimer;              // 15分钟重启定时器
+    bool enableDeviceReboot;                // 启用设备重启功能
+    int deviceRebootTimeout;                // 设备重启超时时间(毫秒)
+    QDateTime lastValidConnectionTime;      // 最后有效连接时间
 
     // 常量定义
     static const int DEFAULT_RECONNECT_DELAY = 5000;        // 5秒重连延迟
@@ -107,6 +119,7 @@ private:
     static const int DEFAULT_CONNECTION_TIMEOUT = 60000;    // 60秒连接超时
     static const int DEFAULT_MAX_RECONNECT_ATTEMPTS = 5;    // 默认最大重连次数
     static const int NETWORK_CHECK_INTERVAL = 10000;       // 10秒网络检查间隔
+    static const int DEFAULT_DEVICE_REBOOT_TIMEOUT = 900000;  // 15分钟 (毫秒)
 };
 
 // 全局实例声明

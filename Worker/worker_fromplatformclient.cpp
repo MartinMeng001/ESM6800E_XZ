@@ -13,7 +13,7 @@ Worker_fromPlatformClient::Worker_fromPlatformClient(QObject *parent) : QObject(
 void Worker_fromPlatformClient::work4PlatformClient()
 {
     prctl(PR_SET_NAME,"Worker_fromPlatformClient");
-    connect(this, &Worker_fromPlatformClient::sendData2Annuniator, &manager_AnnuniatorConnections, &ManageAnnuniatorConnections::sendData2Annuniator);
+    connect(this, &Worker_fromPlatformClient::sendData2Annuniator, manager_AnnuniatorConnections, &ManageAnnuniatorConnections::sendData2Annuniator);
     while (true) {
         dataItem_PlatformClient* item = dataMgrPlatformClient.getLatestDataItem();
         if(item!=nullptr){
